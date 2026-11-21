@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Hộp Thư Kỷ Niệm Bí Mật</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Lora & Cormorant Garamond (Serif tinh tế cho thư) + Plus Jakarta Sans (UI hiện đại) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Lora"', 'serif'],
+            display: ['"Cormorant Garamond"', 'serif'],
+          },
+          colors: {
+            paper: {
+              light: '#FAF8F5',
+              card: '#FFFDF9',
+              border: '#EAE0D2',
+              dark: '#141312',
+              darkCard: '#1E1C1A',
+              darkBorder: '#2E2B28',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Hiệu ứng nền giấy mịn & chuyển động mượt */
+    html, body {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: none;
+    }
+
+    body {
+      background-image: radial-gradient(rgba(160, 140, 115, 0.12) 1px, transparent 0);
+      background-size: 24px 24px;
+      transition: background-color 0.4s ease, color 0.4s ease;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    html.dark body {
+      background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
+    }
+
+    /* Hiệu ứng trái tim nền bay lên nhẹ nhàng bằng GPU */
+    @keyframes floatHeartUp {
+      0% {
+        transform: translate3d(0, 0, 0) scale(0.75) rotate(var(--rot-start, -10deg));
+        opacity: 0;
+      }
+      12% {
+        opacity: var(--heart-opacity, 0.45);
+      }
+      50% {
+        transform: translate3d(var(--sway-x, 18px), -52vh, 0) scale(1) rotate(var(--rot-mid, 8deg));
+      }
+      85% {
+        opacity: var(--heart-opacity, 0.45);
+      }
+      100% {
+        transform: translate3d(calc(var(--sway-x, 18px) * -0.6), -112vh, 0) scale(1.08) rotate(var(--rot-end, -12deg));
+        opacity: 0;
+      }
+    }
+
+    .floating-heart {
+      position: fixed;
+      bottom: -48px;
+      pointer-events: none;
+      user-select: none;
+      will-change: transform, opacity;
+      animation: floatHeartUp var(--duration, 12s) linear forwards;
+      filter: drop-shadow(0 2px 6px rgba(244, 63, 94, 0.12));
+    }
+
+    /* Đợt tim chúc mừng bùng lên khi mở khóa thành công */
+    @keyframes burstHeartUp {
+      0% {
+        transform: translate3d(0, 0, 0) scale(0.4) rotate(0deg);
+        opacity: 0;
+      }
+      18% {
+        opacity: 0.9;
+        transform: translate3d(calc(var(--sway-x, 20px) * 0.3), -18vh, 0) scale(1.15) rotate(10deg);
+      }
+      100% {
+        transform: translate3d(var(--sway-x, 20px), -105vh, 0) scale(0.85) rotate(-14deg);
+        opacity: 0;
+      }
+    }
+
+    .burst-heart {
+      position: fixed;
+      bottom: 8vh;
+      pointer-events: none;
+      user-select: none;
+      will-change: transform, opacity;
+      animation: burstHeartUp var(--duration, 3.2s) cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Hiệu ứng rung nhẹ khi nhập sai mã PIN */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .animate-shake {
+      animation: shake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+
+    /* Hiệu ứng nảy chấm tròn khi nhập số */
+    @keyframes dotPop {
+      0% { transform: scale(0.6); }
+      60% { transform: scale(1.25); }
+      100% { transform: scale(1); }
+    }
+    .pin-dot-active {
+      animation: dotPop 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    /* Nút bấm bàn phím số chuẩn xúc giác mobile */
+    .keypad-btn {
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      width: clamp(60px, 17.5vw, 72px);
+      height: clamp(60px, 17.5vw, 72px);
+      transition: transform 0.1s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .keypad-btn:active {
+      transform: scale(0.9);
+    }
+
+    /* Hiệu ứng mở thư mượt mà */
+    @keyframes letterReveal {
+      0% {
+        opacity: 0;
+        transform: translateY(22px) scale(0.98);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    .animate-letter-reveal {
+      animation: letterReveal 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Thẻ ảnh Polaroid */
+    .polaroid-card {
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease;
+    }
+    .polaroid-card:hover {
+      transform: translateY(-6px) rotate(0deg) scale(1.02) !important;
+      z-index: 10;
+    }
+
+    /* Con trỏ nhấp nháy nhẹ cho hiệu ứng chạy chữ */
+    @keyframes cursorBlink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    .typing-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1.05em;
+      background-color: #e11d48;
+      margin-left: 2px;
+      vertical-align: -0.15em;
+      border-radius: 999px;
+      animation: cursorBlink 0.85s infinite;
+    }
+    html.dark .typing-cursor {
+      background-color: #fb7185;
+    }
+
+    /* Hiệu ứng hiện mượt phần chữ ký & ảnh sau khi chạy chữ xong */
+    .fade-section {
+      transition: opacity 0.65s ease, transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Tùy chỉnh thanh cuộn tinh tế */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(156, 138, 120, 0.35);
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body class="bg-paper-light text-stone-800 dark:bg-paper-dark dark:text-stone-100 min-h-[100dvh] flex flex-col relative overflow-x-hidden selection:bg-rose-200 selection:text-rose-900 dark:selection:bg-rose-900/60 dark:selection:text-rose-100">
+
+  <!-- Lớp nền chứa các trái tim bay lên (Không cản thao tác chạm) -->
+  <div id="heartsLayer" class="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true"></div>
+
+  <!-- Thanh điều khiển nhanh nổi gọn ở góc trên (Bật/tắt tim bay, Dark mode, Khóa lại, Hướng dẫn) -->
+  <header class="relative z-20 w-full max-w-3xl mx-auto px-4 pt-3 sm:pt-4 flex items-center justify-between">
+    <button
+      id="lockBtn"
+      type="button"
+      onclick="lockLetter()"
+      class="hidden items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold bg-paper-card/90 dark:bg-paper-darkCard/90 backdrop-blur-md border border-paper-border dark:border-paper-darkBorder text-stone-700 dark:text-stone-200 shadow-sm active:scale-95 transition"
+    >
+      <svg class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+      </svg>
+      <span>Khóa thư</span>
+    </button>
+
+    <div class="ml-auto flex items-center gap-2">
+      <!-- Nút bật/tắt hiệu ứng tim bay -->
+      <button
+        id="heartsToggleBtn"
+        type="button"
+        onclick="toggleFloatingHearts()"
+        class="w-9 h-9 rounded-full bg-paper-card/90 dark:bg-paper-darkCard/90 backdrop-blur-md border border-paper-border dark:border-paper-darkBorder flex items-center justify-center text-rose-500 shadow-sm active:scale-90 transition"
+        title="Bật / Tắt trái tim bay"
+        aria-label="Bật hoặc tắt trái tim bay"
+      >
+        <svg id="heartIconOn" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/>
+        </svg>
+        <svg id="heartIconOff" class="w-4 h-4 hidden text-stone-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18"/>
+        </svg>
+      </button>
+
+      <!-- Nút đổi chế độ Sáng / Tối -->
+      <button
+        type="button"
+        onclick="toggleDarkMode()"
+        class="w-9 h-9 rounded-full bg-paper-card/90 dark:bg-paper-darkCard/90 backdrop-blur-md border border-paper-border dark:border-paper-darkBorder flex items-center justify-center text-stone-600 dark:text-amber-300 shadow-sm active:scale-90 transition"
+        title="Đổi giao diện Sáng / Tối"
+        aria-label="Đổi giao diện Sáng hoặc Tối"
+      >
+        <svg class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
+        <svg class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- =====================================================================
+       MÀN HÌNH 1: MÀN HÌNH KHÓA BÀN PHÍM SỐ (TỐI ƯU 100DVH TRÊN MOBILE)
+       ===================================================================== -->
+  <main id="lockScreen" class="relative z-10 flex-1 flex flex-col items-center justify-center px-3.5 py-2 sm:px-4 sm:py-4 select-none">
+    <div id="lockCard" class="w-full max-w-[380px] bg-paper-card/95 dark:bg-paper-darkCard/95 backdrop-blur-md border border-paper-border dark:border-paper-darkBorder rounded-[1.85rem] px-5 py-5 sm:px-8 sm:py-8 shadow-[0_20px_50px_rgba(92,74,56,0.08)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.45)] transition-all">
+      
+      <!-- Biểu tượng Phong bì niêm phong sáp đỏ -->
+      <!-- <div class="flex justify-center mb-2.5 sm:mb-4">
+        <div class="relative w-13 h-13 sm:w-16 sm:h-16 p-3 sm:p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900/50 flex items-center justify-center shadow-inner">
+          <svg class="w-7 h-7 sm:w-8 sm:h-8 text-rose-700 dark:text-rose-400" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+          <span class="absolute -bottom-1.5 -right-1.5 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-md ring-4 ring-paper-card dark:ring-paper-darkCard">
+            <svg class="w-2.5 h-2.5 sm:w-3 sm:h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+            </svg>
+          </span>
+        </div>
+      </div> -->
+
+      <!-- Tiêu đề màn hình khóa -->
+      <div class="text-center mb-3.5 sm:mb-5">
+        <h1 class="font-display text-[26px] sm:text-[34px] font-bold tracking-tight text-stone-800 dark:text-stone-100 leading-tight mb-1">
+          Gửi Người Đặc Biệt
+        </h1>
+        <p class="text-xs sm:text-sm text-stone-500 dark:text-stone-400">
+          Nhập mật mã <span id="pinLengthLabel" class="font-semibold text-stone-700 dark:text-stone-200">4 chữ số</span> để mở khóa bức thư
+        </p>
+      </div>
+
+      <!-- Dòng chấm tròn hiển thị trạng thái nhập mã PIN -->
+      <div class="flex flex-col items-center mb-3.5 sm:mb-5">
+        <div id="pinDotsContainer" class="flex items-center justify-center gap-4 h-6">
+          <!-- Các chấm tròn PIN được render tự động theo PIN_LENGTH -->
+        </div>
+        <p id="errorMessage" class="h-4 mt-1.5 text-center text-xs font-medium text-rose-600 dark:text-rose-400 opacity-0 transition-opacity duration-200">
+          Mã PIN chưa đúng, hãy thử lại nhé!
+        </p>
+      </div>
+
+      <!-- Bàn phím số tròn tối giản (0 - 9) tối ưu cho ngón tay cái -->
+      <div class="grid grid-cols-3 gap-2.5 sm:gap-4 max-w-[252px] sm:max-w-[268px] mx-auto place-items-center">
+        <!-- Phím 1 - 9 -->
+        <button type="button" onclick="pressDigit('1')" class="keypad-btn rounded-full bg-stone-100/90 hover:bg-stone-200/80 active:bg-rose-100 dark:bg-stone-800/80 dark:hover:bg-stone-700/80 dark:active:bg-rose-950/60 border border-stone-200/70 dark:border-stone-700/70 flex flex-col items-center justify-center shadow-sm">
+          <span class="text-xl sm:text-2xl font-semibold text-stone-800 dark:text-stone-100 leading-none">1</span>
+        </button>
+        <button type="button" onclick="pressDigit('2')" class="keypad-btn rounded-full bg-stone-100/90 hover:bg-stone-200/80 active:bg-rose-100 dark:bg-stone-800/80 dark:hover:bg-stone-700/80 dark:active:bg-rose-950/60 border border-stone-200/70 dark:border-stone-700/70 flex flex-col items-center justify-center shadow-sm">
+          <span class="text-xl sm:text-2xl font-semibold text-stone-800 dark:text-stone-100 leading-none">2</span>
+          <span class="text-[8px] sm:text-[9px] tracking-[0.18em] text-stone-400 mt-0.5 sm:mt-1 font-medium">ABC</span>
+        </button>
+        <button type="button" onclick="pressDigit('3')" class="keypad-btn rounded-full bg-stone-100/90 hover:bg-stone-200/80 active:bg-rose-100 dark:bg-stone-800/80 dark:hover:bg-stone-700/80 dark:active:bg-rose-950/60 border border-stone-200/70 dark:border-stone-700/70 flex flex-col items-center justify-center shadow-sm">
+          <span class="text-xl sm:text-2xl font-semibold text-stone-800 dark:text-stone-100 leading-none">3</span>
+          <span class="text-[8px] sm:text-[9px] tracking-[0.18em] text-stone-400 mt-0.5 sm:mt-1 font-medium">DEF</span>
+        </button>
+
+        <button type="button" onclick="pressDigit('4')" class="keypad-btn rounded-full bg-stone-100/90 hover:bg-stone-200/80 active:bg-rose-100 dark:bg-stone-800/80 dark:hover:bg-stone-700/80 dark:active:bg-rose-950/60 border border-stone-200/70 dark:border-stone-700/70 flex flex-col items-center justify-center shadow-sm">
+          <span class="text-xl sm:text-2xl font-semibold text-stone-800 dark:text-stone-100 leading-none">4</span>
+          <span class="text-[8px] sm:text-[9px] tracking-[0.18em] text-stone-400 mt-0.5 sm:mt-1 font-medium">GHI</span>
+        </button>
+        <button type="button" onclick="pressDigit('5')" class="keypad-btn rounded-full bg-stone-100/90 hover:bg-stone-200/80 active:bg-rose-100 dark:bg-stone-800/80 dark:hover:bg-stone-700/80 dark:active:bg-rose-950/60 border border-stone-200/70 dark:border-stone-700/70 flex flex-col items-center justify-center shadow-sm">
+          <span class="text-xl sm:text-2xl font-semibold text-stone-800 dark:text-stone-100 leading-none">5</span>
+          <span class="text-[8px] sm:text-[9px] tracking-[0.18em] text-stone-400 mt-0.5 sm:mt-1 font-medium">JKL</span>
+        </button>
+        <button type="button" onclick="pressDigit('6')" class="keypad-btn rounded-full bg-stone-100/90 hover:bg-stone-200/80 active:bg-rose-100 dark:bg-stone-800/80 dark:hover:bg-stone-700/80 dark:active:bg-rose-950/60 border border-stone-200/70 dark:border-stone-700/70 flex flex-col items-center justify-center shadow-sm">
+          <span class="text-xl sm:text-2xl font-semibold text-stone-800 dark:text-stone-100 leading-none">6</span>
+          <span class="text-[8px] sm:text-[9px] tracking-[0.18em] text-stone-400 mt-0.5 sm:mt-1 font-medium">MNO</span>
+        </button>
+
+        <button type="button" onclick="pressDigit('7')" class="keypad-btn rounded-full bg-stone-100/90 hover:bg-stone-200/80 active:bg-rose-100 dark:bg-stone-800/80 dark:hover:bg-stone-700/80 dark:active:bg-rose-950/60 border border-stone-200/70 dark:border-stone-700/70 flex flex-col items-center justify-center shadow-sm">
+          <span class="text-xl sm:text-2xl font-semibold text-stone-800 dark:text-stone-100 leading-none">7</span>
+          <span class="text-[8px] sm:text-[9px] tracking-[0.18em] text-stone-400 mt-0.5 sm:mt-1 font-medium">PQRS</span>
+        </button>
+        <button type="button" onclick="pressDigit('8')" class="keypad-btn rounded-full bg-stone-100/90 hover:bg-stone-200/80 active:bg-rose-100 dark:bg-stone-800/80 dark:hover:bg-stone-700/80 dark:active:bg-rose-950/60 border border-stone-200/70 dark:border-stone-700/70 flex flex-col items-center justify-center shadow-sm">
+          <span class="text-xl sm:text-2xl font-semibold text-stone-800 dark:text-stone-100 leading-none">8</span>
+          <span class="text-[8px] sm:text-[9px] tracking-[0.18em] text-stone-400 mt-0.5 sm:mt-1 font-medium">TUV</span>
+        </button>
+        <button type="button" onclick="pressDigit('9')" class="keypad-btn rounded-full bg-stone-100/90 hover:bg-stone-200/80 active:bg-rose-100 dark:bg-stone-800/80 dark:hover:bg-stone-700/80 dark:active:bg-rose-950/60 border border-stone-200/70 dark:border-stone-700/70 flex flex-col items-center justify-center shadow-sm">
+          <span class="text-xl sm:text-2xl font-semibold text-stone-800 dark:text-stone-100 leading-none">9</span>
+          <span class="text-[8px] sm:text-[9px] tracking-[0.18em] text-stone-400 mt-0.5 sm:mt-1 font-medium">WXYZ</span>
+        </button>
+
+        <!-- Hàng dưới cùng: Nút Xóa hết (Clear) - Số 0 - Nút Xóa lùi (Backspace) -->
+        <button
+          type="button"
+          onclick="clearPin()"
+          class="keypad-btn rounded-full text-[11px] sm:text-xs font-semibold tracking-wide text-stone-500 hover:text-stone-800 hover:bg-stone-100 dark:text-stone-400 dark:hover:text-stone-100 dark:hover:bg-stone-800/60 flex items-center justify-center"
+          title="Xóa toàn bộ"
+        >
+          Xóa hết
+        </button>
+
+        <button type="button" onclick="pressDigit('0')" class="keypad-btn rounded-full bg-stone-100/90 hover:bg-stone-200/80 active:bg-rose-100 dark:bg-stone-800/80 dark:hover:bg-stone-700/80 dark:active:bg-rose-950/60 border border-stone-200/70 dark:border-stone-700/70 flex items-center justify-center shadow-sm">
+          <span class="text-xl sm:text-2xl font-semibold text-stone-800 dark:text-stone-100 leading-none">0</span>
+        </button>
+
+        <button
+          type="button"
+          onclick="backspacePin()"
+          class="keypad-btn rounded-full text-stone-500 hover:text-stone-800 hover:bg-stone-100 dark:text-stone-400 dark:hover:text-stone-100 dark:hover:bg-stone-800/60 flex items-center justify-center"
+          aria-label="Xóa lùi 1 số"
+          title="Xóa 1 số"
+        >
+          <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- =================================================================
+           PHẦN GỢI Ý MÃ PIN DEMO (Có thể ẩn bằng SHOW_DEMO_HINTS = false)
+           ================================================================= -->
+      <!-- <div id="demoHintsContainer" class="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-paper-border/80 dark:border-paper-darkBorder text-center">
+        <button
+          type="button"
+          onclick="toggleHintList()"
+          class="inline-flex items-center gap-1.5 text-xs text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 py-1 transition"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span>Xem danh sách mã PIN mẫu để thử</span>
+        </button>
+
+        <div id="hintList" class="hidden mt-2.5 flex flex-wrap justify-center gap-1.5 sm:gap-2">
+          <button type="button" onclick="quickFillPin('1234')" class="px-2.5 py-1.5 rounded-xl text-xs bg-rose-50 hover:bg-rose-100 active:scale-95 dark:bg-rose-950/50 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200/70 dark:border-rose-800/60 transition">
+            💌 <span class="font-semibold">1234</span> (Tình yêu)
+          </button>
+          <button type="button" onclick="quickFillPin('2011')" class="px-2.5 py-1.5 rounded-xl text-xs bg-amber-50 hover:bg-amber-100 active:scale-95 dark:bg-amber-950/50 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/60 transition">
+            🌻 <span class="font-semibold">2011</span> (Tri ân)
+          </button>
+          <button type="button" onclick="quickFillPin('0803')" class="px-2.5 py-1.5 rounded-xl text-xs bg-emerald-50 hover:bg-emerald-100 active:scale-95 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/60 transition">
+            ✨ <span class="font-semibold">0803</span> (Bạn thân)
+          </button>
+        </div>
+      </div> -->
+
+    </div>
+  </main>
+
+  <!-- =====================================================================
+       MÀN HÌNH 2: HIỂN THỊ NỘI DUNG THƯ & ẢNH KỶ NIỆM (ĐỒNG BỘ TỐI GIẢN)
+       ===================================================================== -->
+  <section id="letterScreen" class="relative z-10 hidden flex-1 w-full max-w-xl mx-auto px-3.5 sm:px-6 pt-2 sm:pt-4 pb-12">
+    <div id="letterCard" class="animate-letter-reveal bg-paper-card/95 dark:bg-paper-darkCard/95 backdrop-blur-md border border-paper-border dark:border-paper-darkBorder rounded-[1.85rem] px-5 py-6 sm:px-10 sm:py-10 shadow-[0_20px_50px_rgba(92,74,56,0.08)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.45)] transition-all">
+      
+      <!-- Phần đầu tối giản đồng bộ với thẻ nhập PIN -->
+      <div class="text-center pb-5 sm:pb-6 mb-6 border-b border-paper-border/80 dark:border-paper-darkBorder">
+        <!-- <div class="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 mb-3">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76"/>
+          </svg>
+        </div> -->
+
+        <p id="letterDate" class="text-[11px] sm:text-xs font-medium tracking-wider uppercase text-stone-400 dark:text-stone-400 mb-1.5">
+          Hà Nội, ngày ...
+        </p>
+
+        <h2 id="letterTitle" class="font-display text-[26px] sm:text-[34px] font-bold text-stone-800 dark:text-stone-100 leading-tight">
+          Tiêu đề bức thư
+        </h2>
+      </div>
+
+      <!-- Lời chào người nhận -->
+      <p id="letterRecipient" class="font-serif italic text-base sm:text-lg text-stone-700 dark:text-stone-300 mb-4 sm:mb-5">
+        Gửi bạn thân mến,
+      </p>
+
+      <!-- Khu vực chạy chữ hiển thị nội dung bức thư (chạm vào để hiện nhanh toàn bộ) -->
+      <div
+        id="letterBodyWrapper"
+        onclick="skipTypewriter()"
+        title="Chạm để hiển thị toàn bộ nội dung ngay"
+        class="cursor-pointer select-none sm:select-text"
+      >
+        <div id="letterBody" class="font-serif text-[15px] sm:text-[16.5px] leading-[1.75] text-stone-700 dark:text-stone-200 space-y-2.5">
+          <!-- Nội dung được gõ từng chữ bằng JS -->
+        </div>
+        <p id="skipTypingHint" class="mt-1.5 text-[11px] text-stone-400 dark:text-stone-500 italic text-right transition-opacity duration-300">
+          Chạm vào thư để hiện toàn bộ...
+        </p>
+      </div>
+
+      <!-- Chữ ký người gửi (ẩn hẳn cho đến khi chạy chữ xong) -->
+      <div id="letterSignatureBlock" class="hidden fade-section opacity-0 translate-y-2 mt-4 sm:mt-5 pt-2.5 flex flex-col items-end text-right">
+        <p class="font-serif italic text-xs sm:text-sm text-stone-500 dark:text-stone-400 mb-0.5">Thân thương,</p>
+        <p id="letterSender" class="font-display text-2xl sm:text-3xl font-bold text-stone-800 dark:text-stone-100">
+          Người gửi
+        </p>
+      </div>
+
+      <!-- ===============================================================
+           KHU VỰC HÌNH ẢNH KỶ NIỆM (Ẩn hẳn cho đến khi chạy chữ xong)
+           =============================================================== -->
+      <div id="gallerySection" class="hidden fade-section opacity-0 translate-y-3 mt-6 sm:mt-7 pt-5 sm:pt-6 border-t border-paper-border/80 dark:border-paper-darkBorder">
+        <div class="text-center mb-4">
+          <h3 class="font-display text-xl sm:text-2xl font-bold text-stone-800 dark:text-stone-100">
+            Khoảnh Khắc Lưu Giữ
+          </h3>
+          <p class="text-xs text-stone-400 dark:text-stone-400 mt-0.5">
+            Chạm vào từng tấm ảnh để xem rõ hơn
+          </p>
+        </div>
+
+        <!-- Lưới thẻ ảnh Polaroid: 2 cột cân đối trên mobile -->
+        <div id="photoGrid" class="grid grid-cols-2 gap-3 sm:gap-4">
+          <!-- Các thẻ ảnh sẽ được chèn tự động tại đây -->
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- =====================================================================
+       LIGHTBOX MODAL: PHÓNG TO ẢNH & HỖ TRỢ VUỐT NGANG/DỌC TRÊN ĐIỆN THOẠI
+       ===================================================================== -->
+  <div
+    id="lightboxModal"
+    onclick="closeLightbox(event)"
+    class="fixed inset-0 z-50 hidden bg-stone-950/90 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 transition-opacity select-none"
+  >
+    <div
+      id="lightboxContent"
+      class="relative max-w-2xl w-full bg-white dark:bg-stone-900 p-2.5 sm:p-4 pb-5 sm:pb-6 rounded-2xl shadow-2xl transform transition-all"
+      onclick="event.stopPropagation()"
+    >
+      <!-- Nút đóng Lightbox -->
+      <button
+        onclick="closeLightbox()"
+        class="absolute -top-3 -right-2 sm:-top-4 sm:-right-4 w-10 h-10 rounded-full bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-100 shadow-lg flex items-center justify-center active:scale-90 transition z-10"
+        aria-label="Đóng ảnh"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+
+      <!-- Ảnh phóng to -->
+      <div class="w-full max-h-[65dvh] sm:max-h-[70vh] overflow-hidden rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center">
+        <img
+          id="lightboxImg"
+          src=""
+          alt="Ảnh kỷ niệm phóng to"
+          class="w-full h-auto max-h-[65dvh] sm:max-h-[70vh] object-contain"
+        />
+      </div>
+
+      <!-- Chú thích ảnh -->
+      <div class="mt-3.5 px-2 text-center">
+        <p id="lightboxCaption" class="font-serif italic text-sm sm:text-lg text-stone-700 dark:text-stone-200"></p>
+        <p id="lightboxCounter" class="text-[11px] text-stone-400 mt-1"></p>
+      </div>
+
+      <!-- Điều hướng Trước / Sau (Nút chạm rộng rãi cho mobile) -->
+      <div class="mt-3.5 flex items-center justify-center gap-3">
+        <button
+          onclick="navigateLightbox(-1)"
+          class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-semibold bg-stone-100 hover:bg-stone-200 active:scale-95 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 transition"
+        >
+          ← Ảnh trước
+        </button>
+        <button
+          onclick="navigateLightbox(1)"
+          class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-xs font-semibold bg-stone-100 hover:bg-stone-200 active:scale-95 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 transition"
+        >
+          Ảnh tiếp theo →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       CHÂN TRANG NHỎ GỌN
+       ===================================================================== -->
+  <footer class="relative z-10 py-2.5 sm:py-4 text-center text-[11px] sm:text-xs text-stone-400 dark:text-stone-500">
+    Lưu giữ những điều chân thành nhất ✦
+  </footer>
+
+  <!-- =====================================================================
+       JAVASCRIPT: CẤU HÌNH DỮ LIỆU, BÀN PHÍM SỐ & HIỆU ỨNG TRÁI TIM BAY
+       ===================================================================== -->
+  <script>
+    /**
+     * =========================================================================
+     * CÀI ĐẶT CƠ BẢN CHO MÃ PIN & HIỆU ỨNG
+     * - PIN_LENGTH: Số chữ số của mã PIN (mặc định 4, có thể đổi thành 6 nếu dùng ngày tháng năm như 201126)
+     * - SHOW_DEMO_HINTS: Đổi thành `false` khi gửi tặng để ẩn danh sách mã PIN mẫu
+     * - ENABLE_FLOATING_HEARTS: Bật/tắt mặc định hiệu ứng trái tim nền bay lên
+     * =========================================================================
+     */
+    const PIN_LENGTH = 4;
+    const SHOW_DEMO_HINTS = true;
+    const ENABLE_FLOATING_HEARTS = true;
+
+    /**
+     * =========================================================================
+     * KHO DỮ LIỆU THƯ & ẢNH THEO MÃ PIN (DỄ DÀNG TÙY CHỈNH)
+     * - Mỗi khóa (key) là một dãy số đúng bằng độ dài `PIN_LENGTH` ở trên.
+     * - theme hỗ trợ: "rose" (hồng ấm), "amber" (vàng hổ phách), "emerald" (xanh lá dịu), "indigo" (xanh trầm)
+     * =========================================================================
+     */
+    const SECRET_LETTERS = {
+      // --- MẪU 1: Mã PIN "1234" ---
+      "1234": {
+        theme: "rose",
+        // date: "Hà Nội, một buổi tối đầy sao • 2026",
+        title: "Gửi Người Làm Thế Giới Của Anh Dịu Lại",
+        recipient: "Em thương mến,",
+        sender: "Người luôn thương em",
+        content: `Có những ngày thành phố ồn ào đến mức anh chỉ muốn tìm một góc thật yên để thở. Và kỳ lạ thay, góc bình yên nhất của anh lại chưa bao giờ là một nơi chốn cụ thể, mà luôn là khoảnh khắc được nhìn thấy nụ cười của em.
+
+Cảm ơn em vì đã xuất hiện, kiên nhẫn lắng nghe những câu chuyện vụn vặt và biến những ngày bình thường nhất trở thành kỷ niệm đáng nhớ.
+
+Anh lưu lại ở đây vài tấm hình nhỏ — nơi lưu giữ ánh nắng, những buổi chiều lộng gió và cả ánh mắt rạng rỡ của em. Mong rằng dù sau này có bận rộn đến đâu, mỗi lần mở lại trang thư này, em vẫn luôn cảm nhận được mình được trân trọng nhường nào.`,
+        images: [
+          {
+            url: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=900&q=80",
+            caption: "Buổi chiều hoàng hôn đầu tiên mình cùng đi dạo"
+          },
+          {
+            url: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=900&q=80",
+            caption: "Cái nắm tay giữa những ngày gió se lạnh"
+          },
+          {
+            url: "https://images.unsplash.com/photo-1494774157365-9e04c6720e47?auto=format&fit=crop&w=900&q=80",
+            caption: "Khoảnh khắc bình yên chẳng cần nói gì nhiều"
+          }
+        ]
+      },
+
+      // --- MẪU 2: Mã PIN "2011" ---
+      "2011": {
+        theme: "amber",
+        date: "Tháng Mười Một • Ngày Tri Ân",
+        title: "Lời Cảm Ơn Gửi Người Thắp Lửa",
+        recipient: "Kính gửi Thầy / Cô,",
+        sender: "Học trò cũ của Thầy Cô",
+        content: `Thời gian trôi nhanh hơn những gì em từng nghĩ. Những trang vở năm nào giờ đã nằm gọn trên giá sách, nhưng từng bài học, từng lời nhắc nhở ân cần của Thầy Cô vẫn luôn theo em trên mỗi chặng đường trưởng thành.
+
+Cảm ơn Thầy Cô không chỉ vì đã truyền đạt tri thức, mà còn vì đã tin tưởng, bao dung và kiên nhẫn dẫn dắt chúng em trong những năm tháng chênh vênh nhất của tuổi trẻ.
+
+Nhân dịp đặc biệt này, em kính chúc Thầy Cô luôn dồi dào sức khỏe, giữ mãi ngọn lửa nhiệt huyết và niềm vui trọn vẹn bên những chuyến đò mới.`,
+        images: [
+          {
+            url: "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=900&q=80",
+            caption: "Những trang viết và bài học đầu đời"
+          },
+          {
+            url: "https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=900&q=80",
+            caption: "Chút sắc hoa tươi thay lời tri ân chân thành"
+          }
+        ]
+      },
+
+      // --- MẪU 3: Mã PIN "0803" ---
+      "0803": {
+        theme: "emerald",
+        date: "Kỷ nguyên 2026 • Hội Bạn Thân",
+        title: "Gửi Đứa Bạn Cùng Tôi Đi Qua Mọi Cơn Bão",
+        recipient: "Ê bạn hiền,",
+        sender: "Chiến hữu chí cốt của mày",
+        content: `Viết mấy dòng sến súa này hơi ngại thật, nhưng nếu không lưu lại thì chắc cả hai đứa lại mải chạy theo deadline rồi quên mất mình đã đồng hành cùng nhau lâu đến thế nào.
+
+Cảm ơn vì những lần gọi điện nửa đêm không cần lý do, những bữa ăn vỉa hè cười đến đau bụng và cả những lúc im lặng ngồi cạnh nhau khi mọi thứ rối tung lên.
+
+Chúc cho chúng ta của năm nay và nhiều năm tới nữa: ví luôn dày, tâm luôn vững, chân đi được thật nhiều nơi và tình bạn này thì mãi bền bỉ như thế!`,
+        images: [
+          {
+            url: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=900&q=80",
+            caption: "Thanh xuân rực rỡ nhất là khi có đồng bọn"
+          },
+          {
+            url: "https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=900&q=80",
+            caption: "Chuyến đi ngẫu hứng nhưng vui hết nấc"
+          },
+          {
+            url: "https://images.unsplash.com/photo-1506869640319-fe1a24fd76dc?auto=format&fit=crop&w=900&q=80",
+            caption: "Hẹn nhau thêm thật nhiều hành trình mới nhé!"
+          }
+        ]
+      }
+    };
+
+    // Bảng màu nhấn cho từng chủ đề thư
+    const THEME_STYLES = {
+      rose: {
+        topBar: "bg-gradient-to-r from-rose-300 via-rose-500 to-amber-300",
+        badge: "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300"
+      },
+      amber: {
+        topBar: "bg-gradient-to-r from-amber-300 via-orange-400 to-yellow-300",
+        badge: "bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+      },
+      emerald: {
+        topBar: "bg-gradient-to-r from-emerald-300 via-teal-500 to-cyan-300",
+        badge: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+      },
+      indigo: {
+        topBar: "bg-gradient-to-r from-indigo-300 via-violet-500 to-purple-300",
+        badge: "bg-indigo-50 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300"
+      }
+    };
+
+    // Biến trạng thái nhập mã PIN, hiệu ứng chạy chữ và Lightbox
+    let currentPin = "";
+    let isCheckingPin = false;
+    let currentImages = [];
+    let currentLightboxIndex = 0;
+    let heartsEnabled = ENABLE_FLOATING_HEARTS;
+    let heartSpawnerInterval = null;
+    let typingTimer = null;
+    let revealGalleryTimer = null;
+    let activeTypingParagraphs = [];
+    let isTypingDone = false;
+
+    // Bảng màu trái tim bay lên dịu nhẹ
+    const HEART_COLORS = [
+      "#fb7185", // rose-400
+      "#f43f5e", // rose-500
+      "#fda4af", // rose-300
+      "#f472b6", // pink-400
+      "#fb923c", // orange-400 (vàng hồng ấm)
+      "#e11d48"  // rose-600
+    ];
+
+    // Khởi tạo một trái tim bay lên ở nền
+    function spawnFloatingHeart(isBurst = false) {
+      if (!heartsEnabled && !isBurst) return;
+      const layer = document.getElementById("heartsLayer");
+      if (!layer) return;
+
+      // Giới hạn số lượng phần tử DOM để luôn mượt 60fps trên điện thoại
+      if (!isBurst && layer.childElementCount > 24) return;
+
+      const heart = document.createElement("div");
+      const size = isBurst
+        ? Math.floor(Math.random() * 14) + 16
+        : Math.floor(Math.random() * 14) + 12;
+      const leftPos = isBurst
+        ? 15 + Math.random() * 70
+        : Math.random() * 96;
+      const duration = isBurst
+        ? (2.4 + Math.random() * 1.4).toFixed(2)
+        : (9 + Math.random() * 7).toFixed(2);
+      const swayX = ((Math.random() - 0.5) * 70).toFixed(0);
+      const opacity = isBurst
+        ? 0.85
+        : (0.22 + Math.random() * 0.28).toFixed(2);
+      const color = HEART_COLORS[Math.floor(Math.random() * HEART_COLORS.length)];
+
+      heart.className = isBurst ? "burst-heart" : "floating-heart";
+      heart.style.left = `${leftPos}%`;
+      heart.style.width = `${size}px`;
+      heart.style.height = `${size}px`;
+      heart.style.color = color;
+      heart.style.setProperty("--duration", `${duration}s`);
+      heart.style.setProperty("--sway-x", `${swayX}px`);
+      heart.style.setProperty("--heart-opacity", opacity);
+      heart.style.setProperty("--rot-start", `${Math.floor(Math.random() * 30 - 15)}deg`);
+      heart.style.setProperty("--rot-mid", `${Math.floor(Math.random() * 30 - 15)}deg`);
+      heart.style.setProperty("--rot-end", `${Math.floor(Math.random() * 30 - 15)}deg`);
+
+      heart.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" class="w-full h-full"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+
+      layer.appendChild(heart);
+      setTimeout(() => {
+        if (heart.parentNode) heart.remove();
+      }, parseFloat(duration) * 1000 + 200);
+    }
+
+    // Bắn một đợt trái tim chúc mừng khi mở thư
+    function triggerHeartBurst() {
+      if (!heartsEnabled) return;
+      for (let i = 0; i < 16; i++) {
+        setTimeout(() => spawnFloatingHeart(true), i * 65);
+      }
+    }
+
+    // Bắt đầu / Dừng vòng lặp sinh trái tim nền
+    function startHeartsLoop() {
+      if (heartSpawnerInterval) clearInterval(heartSpawnerInterval);
+      // Tạo sẵn vài trái tim ban đầu cho sinh động ngay khi mở trang
+      for (let i = 0; i < 5; i++) {
+        setTimeout(() => spawnFloatingHeart(false), i * 450);
+      }
+      heartSpawnerInterval = setInterval(() => {
+        if (!document.hidden && heartsEnabled) {
+          spawnFloatingHeart(false);
+        }
+      }, 1100);
+    }
+
+    function updateHeartsToggleUI() {
+      const iconOn = document.getElementById("heartIconOn");
+      const iconOff = document.getElementById("heartIconOff");
+      if (!iconOn || !iconOff) return;
+      if (heartsEnabled) {
+        iconOn.classList.remove("hidden");
+        iconOff.classList.add("hidden");
+      } else {
+        iconOn.classList.add("hidden");
+        iconOff.classList.remove("hidden");
+      }
+    }
+
+    function toggleFloatingHearts() {
+      heartsEnabled = !heartsEnabled;
+      localStorage.setItem("secretLetterHearts", heartsEnabled ? "on" : "off");
+      updateHeartsToggleUI();
+
+      const layer = document.getElementById("heartsLayer");
+      if (!heartsEnabled && layer) {
+        layer.innerHTML = "";
+      } else if (heartsEnabled) {
+        spawnFloatingHeart(false);
+      }
+    }
+
+    // Tạo âm thanh click cơ học nhẹ bằng Web Audio API (không cần file âm thanh ngoài)
+    let audioCtx = null;
+    function playTapFeedback(type = "tap") {
+      try {
+        if (navigator.vibrate) {
+          navigator.vibrate(type === "error" ? [40, 40, 40] : 12);
+        }
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+        if (type === "tap") {
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(180, now + 0.035);
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+          osc.start(now);
+          osc.stop(now + 0.04);
+        } else if (type === "success") {
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(587.33, now);
+          osc.frequency.setValueAtTime(880, now + 0.09);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+          osc.start(now);
+          osc.stop(now + 0.29);
+        } else if (type === "error") {
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(160, now);
+          osc.frequency.linearRampToValueAtTime(110, now + 0.18);
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+          osc.start(now);
+          osc.stop(now + 0.2);
+        }
+      } catch (e) {
+        // Bỏ qua nếu trình duyệt chặn audio tự động
+      }
+    }
+
+    // Khởi tạo giao diện khi tải trang
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("pinLengthLabel").textContent = `${PIN_LENGTH} chữ số`;
+      renderPinDots();
+
+      if (!SHOW_DEMO_HINTS) {
+        const hintBox = document.getElementById("demoHintsContainer");
+        if (hintBox) hintBox.classList.add("hidden");
+      }
+
+      if (localStorage.getItem("secretLetterTheme") === "dark") {
+        document.documentElement.classList.add("dark");
+      }
+
+      const savedHearts = localStorage.getItem("secretLetterHearts");
+      if (savedHearts === "off") {
+        heartsEnabled = false;
+      }
+      updateHeartsToggleUI();
+      if (heartsEnabled) {
+        startHeartsLoop();
+      }
+
+      // Hỗ trợ vuốt trái/phải để chuyển ảnh và vuốt xuống để đóng Lightbox trên điện thoại
+      const lightboxContent = document.getElementById("lightboxContent");
+      let touchStartX = 0;
+      let touchStartY = 0;
+      if (lightboxContent) {
+        lightboxContent.addEventListener("touchstart", (e) => {
+          touchStartX = e.changedTouches[0].screenX;
+          touchStartY = e.changedTouches[0].screenY;
+        }, { passive: true });
+
+        lightboxContent.addEventListener("touchend", (e) => {
+          const dx = e.changedTouches[0].screenX - touchStartX;
+          const dy = e.changedTouches[0].screenY - touchStartY;
+          if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 45) {
+            navigateLightbox(dx < 0 ? 1 : -1);
+          } else if (dy > 85 && Math.abs(dx) < 50) {
+            closeLightbox();
+          }
+        }, { passive: true });
+      }
+
+      // Hỗ trợ nhập trực tiếp từ bàn phím số trên máy tính & điều khiển Lightbox
+      document.addEventListener("keydown", (e) => {
+        const lightbox = document.getElementById("lightboxModal");
+
+        if (!lightbox.classList.contains("hidden")) {
+          if (e.key === "Escape") closeLightbox();
+          if (e.key === "ArrowLeft") navigateLightbox(-1);
+          if (e.key === "ArrowRight") navigateLightbox(1);
+          return;
+        }
+
+        const lockScreen = document.getElementById("lockScreen");
+        if (!lockScreen.classList.contains("hidden")) {
+          if (/^[0-9]$/.test(e.key)) {
+            e.preventDefault();
+            pressDigit(e.key);
+          } else if (e.key === "Backspace") {
+            e.preventDefault();
+            backspacePin();
+          } else if (e.key === "Escape" || e.key === "Delete") {
+            e.preventDefault();
+            clearPin();
+          }
+        }
+      });
+    });
+
+    // Vẽ các chấm tròn tương ứng với độ dài PIN_LENGTH
+    function renderPinDots(isError = false) {
+      const container = document.getElementById("pinDotsContainer");
+      container.innerHTML = "";
+
+      for (let i = 0; i < PIN_LENGTH; i++) {
+        const dot = document.createElement("span");
+        const isFilled = i < currentPin.length;
+
+        if (isError) {
+          dot.className = "w-3.5 h-3.5 rounded-full bg-rose-500 ring-4 ring-rose-500/20 transition-all";
+        } else if (isFilled) {
+          const isNewest = i === currentPin.length - 1;
+          dot.className = `w-3.5 h-3.5 rounded-full bg-rose-600 dark:bg-rose-400 shadow-sm ${isNewest ? "pin-dot-active" : ""}`;
+        } else {
+          dot.className = "w-3.5 h-3.5 rounded-full border-2 border-stone-300 dark:border-stone-600 bg-transparent transition-all";
+        }
+        container.appendChild(dot);
+      }
+    }
+
+    // Nhấn một phím số (0-9)
+    function pressDigit(digit) {
+      if (isCheckingPin || currentPin.length >= PIN_LENGTH) return;
+
+      // Ẩn thông báo lỗi cũ khi bắt đầu nhập lại
+      document.getElementById("errorMessage").classList.add("opacity-0");
+
+      currentPin += digit;
+      playTapFeedback("tap");
+      renderPinDots(false);
+
+      // Khi nhập đủ số chữ số -> Tự động kiểm tra và mở khóa ngay
+      if (currentPin.length === PIN_LENGTH) {
+        isCheckingPin = true;
+        setTimeout(() => {
+          verifyPinCode(currentPin);
+        }, 160);
+      }
+    }
+
+    // Xóa lùi 1 chữ số
+    function backspacePin() {
+      if (isCheckingPin || currentPin.length === 0) return;
+      currentPin = currentPin.slice(0, -1);
+      playTapFeedback("tap");
+      renderPinDots(false);
+    }
+
+    // Xóa toàn bộ mã PIN đang nhập
+    function clearPin() {
+      if (isCheckingPin) return;
+      if (currentPin.length > 0) {
+        playTapFeedback("tap");
+      }
+      currentPin = "";
+      renderPinDots(false);
+      document.getElementById("errorMessage").classList.add("opacity-0");
+    }
+
+    // Kiểm tra mã PIN và chuyển sang màn hình đọc thư
+    function verifyPinCode(pin) {
+      const letterData = SECRET_LETTERS[pin];
+      const lockCard = document.getElementById("lockCard");
+      const errorMsg = document.getElementById("errorMessage");
+
+      if (!letterData) {
+        playTapFeedback("error");
+        renderPinDots(true);
+        errorMsg.classList.remove("opacity-0");
+
+        lockCard.classList.remove("animate-shake");
+        void lockCard.offsetWidth;
+        lockCard.classList.add("animate-shake");
+
+        setTimeout(() => {
+          currentPin = "";
+          isCheckingPin = false;
+          renderPinDots(false);
+        }, 520);
+        return;
+      }
+
+      // Mở khóa thành công
+      playTapFeedback("success");
+      triggerHeartBurst();
+
+      setTimeout(() => {
+        document.getElementById("lockScreen").classList.add("hidden");
+        const letterScreen = document.getElementById("letterScreen");
+        letterScreen.classList.remove("hidden");
+
+        const lockBtn = document.getElementById("lockBtn");
+        lockBtn.classList.remove("hidden");
+        lockBtn.classList.add("flex");
+
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        renderLetter(letterData);
+        isCheckingPin = false;
+      }, 220);
+    }
+
+    // Ẩn/hiện danh sách mã PIN mẫu
+    function toggleHintList() {
+      const list = document.getElementById("hintList");
+      if (list) list.classList.toggle("hidden");
+    }
+
+    // Điền nhanh mã PIN mẫu với hiệu ứng bấm từng số
+    function quickFillPin(samplePin) {
+      if (isCheckingPin) return;
+      currentPin = "";
+      renderPinDots(false);
+      const digits = String(samplePin).slice(0, PIN_LENGTH).split("");
+      digits.forEach((d, idx) => {
+        setTimeout(() => pressDigit(d), idx * 95);
+      });
+    }
+
+    // Chuyển đổi chế độ Sáng / Tối
+    function toggleDarkMode() {
+      const isDark = document.documentElement.classList.toggle("dark");
+      localStorage.setItem("secretLetterTheme", isDark ? "dark" : "light");
+    }
+
+    // Đổ dữ liệu thư và ảnh ra giao diện kèm hiệu ứng chạy chữ mượt mà
+    function renderLetter(data) {
+      if (revealGalleryTimer) clearTimeout(revealGalleryTimer);
+
+      document.getElementById("letterDate").textContent = data.date || "";
+      document.getElementById("letterTitle").textContent = data.title || "";
+      document.getElementById("letterRecipient").textContent = data.recipient || "";
+      document.getElementById("letterSender").textContent = data.sender || "";
+
+      // Ẩn hẳn chữ ký và bộ sưu tập ảnh khi bắt đầu chạy chữ để tránh khoảng trống thừa
+      const gallerySection = document.getElementById("gallerySection");
+      const signatureBlock = document.getElementById("letterSignatureBlock");
+      const skipHint = document.getElementById("skipTypingHint");
+      const photoGrid = document.getElementById("photoGrid");
+
+      signatureBlock.classList.add("hidden", "opacity-0", "translate-y-2");
+      gallerySection.classList.add("hidden", "opacity-0", "translate-y-3");
+      skipHint.classList.remove("hidden", "opacity-0");
+
+      photoGrid.innerHTML = "";
+      currentImages = Array.isArray(data.images) ? data.images : [];
+
+      if (currentImages.length > 0) {
+        const rotations = ["-rotate-1", "rotate-1", "-rotate-1", "rotate-1"];
+
+        currentImages.forEach((imgObj, index) => {
+          const rotClass = rotations[index % rotations.length];
+          const card = document.createElement("div");
+          card.className = `polaroid-card cursor-pointer bg-white dark:bg-stone-800/90 p-2.5 pb-3.5 rounded-2xl border border-stone-200/80 dark:border-stone-700 shadow-sm ${rotClass}`;
+          card.onclick = () => openLightbox(index);
+
+          card.innerHTML = `
+            <div class="aspect-[4/5] w-full overflow-hidden rounded-xl bg-stone-100 dark:bg-stone-900 mb-2">
+              <img
+                src="${imgObj.url}"
+                alt="${imgObj.caption || 'Ảnh kỷ niệm'}"
+                loading="lazy"
+                onerror="this.src='https://placehold.co/600x750/f5ebe0/7f5539?text=Anh+Ky+Niem'"
+                class="w-full h-full object-cover transition duration-500 hover:scale-105"
+              />
+            </div>
+            <p class="font-serif italic text-[11px] sm:text-xs text-center text-stone-600 dark:text-stone-300 line-clamp-2 px-0.5 leading-snug">
+              ${imgObj.caption || ""}
+            </p>
+          `;
+          photoGrid.appendChild(card);
+        });
+      }
+
+      // Khởi chạy hiệu ứng gõ từng chữ cho nội dung thư
+      activeTypingParagraphs = (data.content || "")
+        .split(/\n\s*\n/)
+        .map((p) => p.trim())
+        .filter(Boolean);
+
+      startTypewriter(activeTypingParagraphs);
+    }
+
+    // Hiệu ứng chạy chữ từng ký tự với con trỏ nhấp nháy
+    function startTypewriter(paragraphs) {
+      if (typingTimer) clearTimeout(typingTimer);
+      isTypingDone = false;
+
+      const bodyContainer = document.getElementById("letterBody");
+      bodyContainer.innerHTML = "";
+
+      if (!paragraphs.length) {
+        finishTypewriter();
+        return;
+      }
+
+      const cursorEl = document.createElement("span");
+      cursorEl.className = "typing-cursor";
+
+      let pIndex = 0;
+      let charIndex = 0;
+      let currentP = document.createElement("p");
+      let currentTextNode = document.createTextNode("");
+      currentP.appendChild(currentTextNode);
+      currentP.appendChild(cursorEl);
+      bodyContainer.appendChild(currentP);
+
+      function typeNextChar() {
+        if (isTypingDone) return;
+
+        const targetText = paragraphs[pIndex];
+        if (charIndex < targetText.length) {
+          const ch = targetText.charAt(charIndex);
+          currentTextNode.nodeValue += ch;
+          charIndex++;
+
+          // Ngắt nhịp tự nhiên hơn ở dấu câu và xuống đoạn
+          let delay = 24;
+          if (ch === "," || ch === ";") delay = 110;
+          else if (ch === "." || ch === "!" || ch === "?" || ch === "—") delay = 210;
+
+          typingTimer = setTimeout(typeNextChar, delay);
+        } else {
+          pIndex++;
+          if (pIndex < paragraphs.length) {
+            charIndex = 0;
+            currentP = document.createElement("p");
+            currentTextNode = document.createTextNode("");
+            currentP.appendChild(currentTextNode);
+            currentP.appendChild(cursorEl);
+            bodyContainer.appendChild(currentP);
+            typingTimer = setTimeout(typeNextChar, 260);
+          } else {
+            finishTypewriter();
+          }
+        }
+      }
+
+      typingTimer = setTimeout(typeNextChar, 320);
+    }
+
+    // Chạm vào thư để hiện toàn bộ chữ ngay lập tức
+    function skipTypewriter() {
+      if (isTypingDone) return;
+      if (typingTimer) clearTimeout(typingTimer);
+
+      const bodyContainer = document.getElementById("letterBody");
+      bodyContainer.innerHTML = "";
+      activeTypingParagraphs.forEach((paraText) => {
+        const p = document.createElement("p");
+        p.textContent = paraText;
+        bodyContainer.appendChild(p);
+      });
+
+      finishTypewriter();
+    }
+
+    // Hoàn tất chạy chữ -> Ẩn con trỏ, gỡ `hidden` và fade-in chữ ký cùng album ảnh
+    function finishTypewriter() {
+      isTypingDone = true;
+      if (revealGalleryTimer) clearTimeout(revealGalleryTimer);
+
+      const cursor = document.querySelector("#letterBody .typing-cursor");
+      if (cursor) cursor.remove();
+
+      const skipHint = document.getElementById("skipTypingHint");
+      skipHint.classList.add("opacity-0");
+      setTimeout(() => {
+        if (isTypingDone) skipHint.classList.add("hidden");
+      }, 300);
+
+      const signatureBlock = document.getElementById("letterSignatureBlock");
+      signatureBlock.classList.remove("hidden");
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          signatureBlock.classList.remove("opacity-0", "translate-y-2");
+        });
+      });
+
+      if (currentImages.length > 0) {
+        const gallerySection = document.getElementById("gallerySection");
+        revealGalleryTimer = setTimeout(() => {
+          gallerySection.classList.remove("hidden");
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              gallerySection.classList.remove("opacity-0", "translate-y-3");
+            });
+          });
+        }, 180);
+      }
+    }
+
+    // Khóa lại thư và quay về bàn phím số
+    function lockLetter() {
+      if (typingTimer) clearTimeout(typingTimer);
+      if (revealGalleryTimer) clearTimeout(revealGalleryTimer);
+      isTypingDone = true;
+
+      document.getElementById("letterScreen").classList.add("hidden");
+      const lockBtn = document.getElementById("lockBtn");
+      lockBtn.classList.add("hidden");
+      lockBtn.classList.remove("flex");
+
+      currentPin = "";
+      isCheckingPin = false;
+      renderPinDots(false);
+      document.getElementById("errorMessage").classList.add("opacity-0");
+
+      const lockScreen = document.getElementById("lockScreen");
+      lockScreen.classList.remove("hidden");
+    }
+
+    // Mở Lightbox xem ảnh phóng to
+    function openLightbox(index) {
+      if (!currentImages.length) return;
+      currentLightboxIndex = index;
+      updateLightboxContent();
+      document.getElementById("lightboxModal").classList.remove("hidden");
+      document.body.style.overflow = "hidden";
+    }
+
+    function updateLightboxContent() {
+      const item = currentImages[currentLightboxIndex];
+      const imgEl = document.getElementById("lightboxImg");
+      imgEl.src = item.url;
+      imgEl.onerror = () => {
+        imgEl.src = "https://placehold.co/800x600/f5ebe0/7f5539?text=Khong+Tai+Duoc+Anh";
+      };
+      document.getElementById("lightboxCaption").textContent = item.caption || "";
+      document.getElementById("lightboxCounter").textContent = `Ảnh ${currentLightboxIndex + 1} / ${currentImages.length}`;
+    }
+
+    function navigateLightbox(step) {
+      if (!currentImages.length) return;
+      currentLightboxIndex = (currentLightboxIndex + step + currentImages.length) % currentImages.length;
+      updateLightboxContent();
+    }
+
+    function closeLightbox() {
+      document.getElementById("lightboxModal").classList.add("hidden");
+      document.body.style.overflow = "";
+    }
+  </script>
+</body>
+</html>
